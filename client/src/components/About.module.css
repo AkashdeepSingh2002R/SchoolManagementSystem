@@ -1,0 +1,25 @@
+.aboutContainer {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #f9fafb;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', sans-serif;
+  line-height: 1.7;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section h1, .section h2 {
+  color: #1E3A8A;
+  margin-bottom: 1rem;
+}
+
+.section p {
+  margin-bottom: 0.75rem;
+  color: #1f2937;
+  font-size: 1.05rem;
+}
