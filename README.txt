@@ -1,23 +1,27 @@
-All files are inside schoolmangementsystem/ (your repo root).
+Use these EXACT values based on your live domains:
 
-1) Server (Render)
-   - Root Directory: server
-   - Build: npm ci
-   - Start: npm start
-   - Env: NODE_VERSION=18, JWT_SECRET, MONGO_URI, ALLOWED_ORIGINS
+Netlify site  : https://schoolmanagementsystem07.netlify.app
+Render backend: https://schoolmanagementsystem-pscb.onrender.com
 
-   Merge server/ENTRY-MERGE.txt into your actual server entry file (server.js / index.js / app.js).
-   Ensure the route GET /api/health and the CORS/cookie middleware are present.
+Render env (Settings → Environment):
+  ALLOWED_ORIGINS=https://schoolmanagementsystem07.netlify.app
+  MONGO_URI=<your Mongo URI>
+  NODE_VERSION=18
 
-2) Client (Netlify)
-   - Base: client
-   - Build: npm run build
-   - Publish: dist
-   - Env: VITE_API_URL=https://<your-render>.onrender.com/api
-   - SPA routing via client/public/_redirects
+Netlify env (Site settings → Environment):
+  VITE_API_URL=https://schoolmanagementsystem-pscb.onrender.com/api
 
-3) Lockfiles (avoid npm ci errors)
-   cd schoolmangementsystem/server && rm -f package-lock.json && npm install
-   cd ../client && rm -f package-lock.json && npm install
-   git add server/package-lock.json client/package-lock.json
-   git commit -m "Sync lockfiles" && git push
+After replacing files:
+  git add server/server.js client/src/api/axios.js
+  git commit -m "CORS delegate + axios prod baseURL (v2)"
+  git push
+
+Force fresh builds:
+  - Render: Clear build cache & deploy
+  - Netlify: Trigger redeploy
+
+Preflight test:
+  curl -i -X OPTIONS "https://schoolmanagementsystem-pscb.onrender.com/api/auth/login" \
+    -H "Origin: https://schoolmanagementsystem07.netlify.app" \
+    -H "Access-Control-Request-Method: POST" \
+    -H "Access-Control-Request-Headers: content-type,authorization"
