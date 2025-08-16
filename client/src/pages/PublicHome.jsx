@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import PublicNavbar from '../components/PublicNavbar.jsx';
 import HomeLoginCard from '../components/HomeLoginCard.jsx';
 
@@ -10,10 +11,43 @@ function Stat({ label, value }){
   );
 }
 
+/** Image that auto-tries hyphen/underscore + webp/jpg/jpeg/png */
+function SafeImg({ stem, alt, className, ...rest }) {
+  const base = import.meta.env.BASE_URL || '/';
+  const candidates = [
+    ...['webp','jpg','jpeg','png'].flatMap(ext => [
+      `${base}${stem}.${ext}`,
+      `${base}${stem.replace(/-/g,'_')}.${ext}`,
+      `${base}${stem.replace(/_/g,'-')}.${ext}`,
+    ]),
+  ];
+  const [idx, setIdx] = useState(0);
+  const src = candidates[idx] || '';
+
+  // Stop after trying all candidates (prevents infinite loop)
+  const handleError = () => {
+    setIdx(i => (i < candidates.length - 1 ? i + 1 : i));
+  };
+
+  return <img src={src} alt={alt} onError={handleError} className={className} {...rest} />;
+}
+
 export default function PublicHome(){
+  const base = import.meta.env.BASE_URL || '/';
+  // Just list the stems; SafeImg will try extensions & hyphen/underscore variants.
+  const galleryStems = [
+    'photo-gallery1',
+    'photo-gallery2',
+    'photo-gallery3',
+    'photo-gallery4',
+    'photo-gallery5',
+    'photo-gallery6',
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <PublicNavbar />
+
       <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
         {/* Hero & Right Column */}
         <section className="grid lg:grid-cols-3 gap-6 items-start">
@@ -25,15 +59,27 @@ export default function PublicHome(){
                   <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
                     Inspiring minds, <br /> building futures
                   </h1>
-                  <p className="mt-2 text-gray-600 dark:text-gray-300">A K–12 community focused on curiosity, character, and excellence.</p>
+                  <p className="mt-2 text-gray-600 dark:text-gray-300">
+                    A K–12 community focused on curiosity, character, and excellence.
+                  </p>
                   <div className="mt-4 flex gap-2">
                     <a href="/about" className="px-4 py-2 rounded-xl bg-emerald-600 text-white">Learn More</a>
                     <a href="/contact" className="px-4 py-2 rounded-xl border dark:border-gray-800">Contact Us</a>
                   </div>
                 </div>
-                <div className="aspect-video rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-800">
-                  {/* Placeholder for hero image */}
-                  <div className="w-full h-full grid place-items-center text-gray-500">[ School Photo ]</div>
+
+                {/* Robust hero image (no collapse; works with any basePath) */}
+                <div
+                  className="relative rounded-2xl overflow-hidden border dark:border-gray-800"
+                  style={{ paddingTop: '56.25%' }}  // 16:9 height
+                >
+                  <img
+                    src={`${base}school-photo.png`}  // put file in /public/school-photo.png
+                    alt="School campus and students"
+                    className="absolute inset-0 h-full w-full object-cover"
+                    loading="eager"
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                  />
                 </div>
               </div>
             </div>
@@ -97,11 +143,19 @@ export default function PublicHome(){
                   ))}
                 </div>
               </div>
+
               <div className="rounded-2xl border dark:border-gray-900 p-4 bg-white dark:bg-gray-950">
                 <div className="font-semibold mb-2">Photo Gallery</div>
                 <div className="grid grid-cols-3 gap-2">
-                  {Array.from({length:6}).map((_,i)=>(
-                    <div key={i} className="aspect-square rounded-xl bg-gray-200 dark:bg-gray-800" />
+                  {galleryStems.map((stem, i)=>(
+                    <div key={i} className="aspect-square rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800">
+                      <SafeImg
+                        stem={stem}                           // e.g., 'photo-gallery1'
+                        alt={`School photo ${i+1}`}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -111,8 +165,13 @@ export default function PublicHome(){
             <div className="rounded-2xl border dark:border-gray-900 p-4 bg-white dark:bg-gray-950">
               <div className="font-semibold">Email newsletter</div>
               <div className="mt-2 flex gap-2">
-                <input placeholder="Enter your email" className="flex-1 border rounded px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-800" />
-                <button className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900">Subscribe</button>
+                <input
+                  placeholder="Enter your email"
+                  className="flex-1 border rounded px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-800"
+                />
+                <button className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900">
+                  Subscribe
+                </button>
               </div>
             </div>
           </div>

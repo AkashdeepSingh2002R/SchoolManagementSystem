@@ -156,19 +156,54 @@ export default function ClassPanel({ classId }){
   const k = state.klass;
 
   const header = (
-    <div className="flex items-center gap-3">
-      <div className="text-xl font-bold">{classLabel(k)}</div>
-      <div className="text-xs rounded px-2 py-0.5 border dark:border-gray-800">Students: {state.students.length}</div>
-      <div className="text-xs rounded px-2 py-0.5 border dark:border-gray-800">Weekly periods: {(state.timetable || []).length}</div>
-      <div className="ml-auto flex items-center gap-2 text-sm">
-        <button onClick={()=>dispatch({ type:'SET_TAB', tab:'students' })} className={"px-3 py-1 rounded " + (state.tab==='students'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Students</button>
-        <button onClick={()=>dispatch({ type:'SET_TAB', tab:'attendance' })} className={"px-3 py-1 rounded " + (state.tab==='attendance'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Attendance</button>
-        <button onClick={()=>dispatch({ type:'SET_TAB', tab:'timetable' })} className={"px-3 py-1 rounded " + (state.tab==='timetable'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Timetable</button>
-        <button onClick={()=>dispatch({ type:'SET_TAB', tab:'assignments' })} className={"px-3 py-1 rounded " + (state.tab==='assignments'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Assignments</button>
-        <button onClick={()=>dispatch({ type:'SET_TAB', tab:'noticeboard' })} className={"px-3 py-1 rounded " + (state.tab==='noticeboard'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Noticeboard</button>
-      </div>
+  <div className="flex items-center gap-3 flex-wrap">
+    <div className="text-xl font-bold">{classLabel(k)}</div>
+    <div className="text-xs rounded px-2 py-0.5 border dark:border-gray-800">Students: {state.students.length}</div>
+    <div className="text-xs rounded px-2 py-0.5 border dark:border-gray-800">Weekly periods: {(state.timetable || []).length}</div>
+
+    {/* Desktop tabs */}
+    <div className="ml-auto hidden md:flex items-center gap-2 text-sm">
+      <button onClick={()=>dispatch({ type:'SET_TAB', tab:'students' })}
+        className={"px-3 py-1 rounded " + (state.tab==='students'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>
+        Students
+      </button>
+      <button onClick={()=>dispatch({ type:'SET_TAB', tab:'attendance' })}
+        className={"px-3 py-1 rounded " + (state.tab==='attendance'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>
+        Attendance
+      </button>
+      <button onClick={()=>dispatch({ type:'SET_TAB', tab:'timetable' })}
+        className={"px-3 py-1 rounded " + (state.tab==='timetable'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>
+        Timetable
+      </button>
+      <button onClick={()=>dispatch({ type:'SET_TAB', tab:'assignments' })}
+        className={"px-3 py-1 rounded " + (state.tab==='assignments'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>
+        Assignments
+      </button>
+      <button onClick={()=>dispatch({ type:'SET_TAB', tab:'noticeboard' })}
+        className={"px-3 py-1 rounded " + (state.tab==='noticeboard'?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>
+        Noticeboard
+      </button>
     </div>
-  );
+
+    {/* Mobile dropdown */}
+    <div className="w-full md:hidden">
+      <label htmlFor="classpanel-tab" className="sr-only">Tab</label>
+      <select
+        id="classpanel-tab"
+        value={state.tab}
+        onChange={(e)=>dispatch({ type:'SET_TAB', tab:e.target.value })}
+        className="mt-2 w-full border rounded px-3 py-2 bg-white text-gray-900 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-800"
+      >
+        <option value="students">Students</option>
+        <option value="attendance">Attendance</option>
+        <option value="timetable">Timetable</option>
+        <option value="assignments">Assignments</option>
+        <option value="noticeboard">Noticeboard</option>
+      </select>
+    </div>
+  </div>
+);
+
 
   if(state.baseLoading) return <div className="rounded-2xl border p-4 dark:border-gray-800">Loading class…</div>;
   if(state.baseError) return <div className="rounded-2xl border p-4 dark:border-gray-800 text-red-600">{state.baseError}</div>;

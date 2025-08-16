@@ -133,17 +133,64 @@ export default function TeacherPanel({ teacherId }){
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="text-xl font-bold">{teacherName(t)}</div>
         <div className="text-xs rounded px-2 py-0.5 border dark:border-gray-800">Classes: {classesCount}</div>
         <div className="text-xs rounded px-2 py-0.5 border dark:border-gray-800">Weekly periods: {weeklyPeriods}</div>
 
-        <div className="ml-auto flex items-center gap-2 text-sm">
-          <button onClick={()=>dispatch({ type:'SET_TAB', tab:'overview' })}     className={"px-3 py-1 rounded " + (state.tab==='overview'    ?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Overview</button>
-          <button onClick={()=>dispatch({ type:'SET_TAB', tab:'timetable' })}    className={"px-3 py-1 rounded " + (state.tab==='timetable'   ?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Timetable</button>
-          <button onClick={()=>dispatch({ type:'SET_TAB', tab:'classes' })}      className={"px-3 py-1 rounded " + (state.tab==='classes'     ?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Classes</button>
-          <button onClick={()=>dispatch({ type:'SET_TAB', tab:'noticeboard' })}  className={"px-3 py-1 rounded " + (state.tab==='noticeboard' ?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Noticeboard</button>
-          <button onClick={()=>dispatch({ type:'SET_TAB', tab:'profile' })}      className={"px-3 py-1 rounded " + (state.tab==='profile'     ?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':'border dark:border-gray-800')}>Profile</button>
+        {/* Desktop tabs */}
+        <div className="ml-auto hidden md:flex items-center gap-2 text-sm">
+          <button
+            onClick={()=>dispatch({ type:'SET_TAB', tab:'overview' })}
+            className={"px-3 py-1 rounded " + (state.tab==='overview'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900'
+              : 'border dark:border-gray-800')}
+          >Overview</button>
+
+          <button
+            onClick={()=>dispatch({ type:'SET_TAB', tab:'timetable' })}
+            className={"px-3 py-1 rounded " + (state.tab==='timetable'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900'
+              : 'border dark:border-gray-800')}
+          >Timetable</button>
+
+          <button
+            onClick={()=>dispatch({ type:'SET_TAB', tab:'classes' })}
+            className={"px-3 py-1 rounded " + (state.tab==='classes'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900'
+              : 'border dark:border-gray-800')}
+          >Classes</button>
+
+          <button
+            onClick={()=>dispatch({ type:'SET_TAB', tab:'noticeboard' })}
+            className={"px-3 py-1 rounded " + (state.tab==='noticeboard'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900'
+              : 'border dark:border-gray-800')}
+          >Noticeboard</button>
+
+          <button
+            onClick={()=>dispatch({ type:'SET_TAB', tab:'profile' })}
+            className={"px-3 py-1 rounded " + (state.tab==='profile'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900'
+              : 'border dark:border-gray-800')}
+          >Profile</button>
+        </div>
+
+        {/* Mobile dropdown */}
+        <div className="w-full md:hidden">
+          <label htmlFor="teacherpanel-tab" className="sr-only">Tab</label>
+          <select
+            id="teacherpanel-tab"
+            value={state.tab}
+            onChange={(e)=>dispatch({ type:'SET_TAB', tab:e.target.value })}
+            className="mt-2 w-full border rounded px-3 py-2 bg-white text-gray-900 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-800"
+          >
+            <option value="overview">Overview</option>
+            <option value="timetable">Timetable</option>
+            <option value="classes">Classes</option>
+            <option value="noticeboard">Noticeboard</option>
+            <option value="profile">Profile</option>
+          </select>
         </div>
       </div>
 

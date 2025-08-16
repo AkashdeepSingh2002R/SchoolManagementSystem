@@ -1,0 +1,48 @@
+
+/* === Global Mobile Responsiveness Patch (Fallback layer) === */
+* { box-sizing: border-box; }
+img, video { max-width: 100%; height: auto; }
+
+/* Tables: scroll horizontally on small screens */
+@media (max-width: '100%') {
+  table { display: block; width: 100%; overflow-x: auto; white-space: nowrap; }
+  thead, tbody, th, td, tr { display: revert; } /* Don't break semantics completely */
+}
+
+/* Forms & buttons: stack and fill width on small screens */
+@media (max-width: '100%') {
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="number"], input[type="tel"], input[type="search"],
+  select, textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  button {
+    width: 100%;
+  }
+  /* Common utility-like class names */
+  .row { display: block !important; }
+  .col { width: 100% !important; display: block !important; }
+  .card, .panel, .box, .container {
+    padding: 1rem !important;
+  }
+  /* Tailwind-ish class adaptors */
+  [class*="flex-row"] { flex-direction: column !important; gap: .75rem; }
+  [class*="grid-cols-"] { grid-template-columns: 1fr !important; }
+  [class*="w-96"], [class*="w-80"], [class*="w-72"], [class*="w-64"], [class*="w-60"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Prevent layouts from overflowing the viewport */
+.container, .wrapper, main, .content, .page {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Utility: ensure long words/URLs wrap */
+.wrap, .text-wrap, p, .prose {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

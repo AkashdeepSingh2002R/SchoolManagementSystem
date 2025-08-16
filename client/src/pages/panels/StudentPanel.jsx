@@ -221,14 +221,34 @@ export default function StudentPanel({ studentId }){
           <div className="text-lg font-semibold">{student?.name || '—'}</div>
           <div className="text-sm text-gray-500 dark:text-gray-400">Roll {student?.rollNo ?? '—'} • <span className="inline-block rounded-full border px-2 py-0.5 text-xs dark:border-gray-700">{badge}</span></div>
         </div>
-        <div className="ml-auto rounded-xl border dark:border-gray-800 p-1 flex gap-1">
-          {['overview','academics','classwork','notices','fees','profile'].map(k=>(
-            <button key={k} onClick={()=>setTab(k)}
-              className={`px-3 py-1.5 text-sm rounded-lg border dark:border-gray-800 ${tab===k?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':''}`}>
-              {k[0].toUpperCase()+k.slice(1)}
-            </button>
-          ))}
-        </div>
+        {/* Desktop tabs */}
+<div className="ml-auto hidden md:flex rounded-xl border dark:border-gray-800 p-1 gap-1">
+  {['overview','academics','classwork','notices','fees','profile'].map(k=>(
+    <button key={k} onClick={()=>setTab(k)}
+      className={`px-3 py-1.5 text-sm rounded-lg border dark:border-gray-800 ${tab===k?'bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900':''}`}>
+      {k[0].toUpperCase()+k.slice(1)}
+    </button>
+  ))}
+</div>
+
+{/* Mobile dropdown */}
+<div className="w-full md:hidden">
+  <label htmlFor="studentpanel-tab" className="sr-only">Tab</label>
+  <select
+    id="studentpanel-tab"
+    value={tab}
+    onChange={(e)=>setTab(e.target.value)}
+    className="mt-2 w-full border rounded px-3 py-2 bg-white text-gray-900 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-800"
+  >
+    <option value="overview">Overview</option>
+    <option value="academics">Academics</option>
+    <option value="classwork">Classwork</option>
+    <option value="notices">Notices</option>
+    <option value="fees">Fees</option>
+    <option value="profile">Profile</option>
+  </select>
+</div>
+
       </div>
 
       {/* OVERVIEW */}
