@@ -1,4 +1,3 @@
-import './styles/responsive.css';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/auth.jsx';
 import AppLayout from './pages/AppLayout.jsx';
