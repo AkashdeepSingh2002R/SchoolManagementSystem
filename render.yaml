@@ -1,0 +1,21 @@
+# Render blueprint for Node/Express server in subfolder
+services:
+  - type: web
+    name: sms-backend
+    env: node
+    rootDir: "schoolmanagementsystem/server"
+    buildCommand: "npm ci"
+    startCommand: "npm start"
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: PORT
+        value: 10000
+      # Add your application secrets below (set in Render dashboard)
+      # - key: JWT_SECRET
+      #   sync: false
+      # - key: MONGO_URI
+      #   sync: false
+      # - key: ALLOWED_ORIGINS
+      #   sync: false

@@ -1,0 +1,13 @@
+# Netlify config for Vite React SPA in subfolder
+[build]
+  base = "schoolmanagementsystem/client"
+  publish = "dist"
+  command = "npm ci && npm run build"
+
+# Set in Netlify UI:
+# VITE_API_URL = https://<your-render>.onrender.com/api
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
