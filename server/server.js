@@ -1,11 +1,11 @@
-// server/server.js  (CORS delegate: no 502 on preflight)
+// server/server.js  — non-throwing CORS + robust preflight
 import 'dotenv/config.js';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
 
-// ---- Models ----
+// ---- Models (yours) ----
 import './models/User.js';
 import './models/Class.js';
 import './models/Student.js';
@@ -22,7 +22,7 @@ import './models/Meeting.js';
 import './models/Conversation.js';
 import './models/Message.js';
 
-// ---- Routes ----
+// ---- Routes (yours) ----
 import authRoutes from './routes/auth.routes.js';
 import statsRoutes from './routes/stats.routes.js';
 import searchRoutes from './routes/search.routes.js';
@@ -46,53 +46,62 @@ import classNoticesRoutes from './routes/classNotices.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 
 const app = express();
-app.set('trust proxy', 1);
+app.set('trust proxy', 1); // Render proxy for secure cookies
 
-// ---- CORS (delegate) ----
-const allowlist = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_ORIGIN || 'https://schoolmanagementsystem07.netlify.app')
+// ---------- CORS (delegate that never throws) ----------
+const normalize = (s) => (s || '').trim().replace(/\/$/, '');
+const allowlist = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_ORIGIN || '')
   .split(',')
-  .map(s => s.trim())
+  .map(normalize)
   .filter(Boolean);
 
-const baseCors = { 
-  credentials: true,
-  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
+// Helpful startup log so you can confirm env was read correctly
+console.log('CORS allowlist:', allowlist);
+
+const baseCors = {
+  credentials: true, // fine even if you use Bearer tokens only
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS','HEAD'],
+  allowedHeaders: ['Content-Type','Authorization','X-Requested-With'],
   optionsSuccessStatus: 204,
-  maxAge: 86400,
+  maxAge: 86400, // cache preflight for 24h
 };
 
-function corsDelegate(req, cb) { 
-  const origin = req.header('Origin');
-  // Always allow server-to-server/no-origin
+function corsDelegate(req, cb) {
+  const origin = normalize(req.header('Origin'));
+  // Always allow requests without Origin (server-to-server, health checks)
   if (!origin) return cb(null, { ...baseCors, origin: false });
+
   const allowed = allowlist.includes(origin);
-  // Do NOT throw on disallowed origins; return origin:false to avoid 5xx
+  // Never throw: say origin=false for disallowed origins so preflight returns 204 (not 5xx)
+  if (!allowed) {
+    console.warn('CORS blocked origin:', origin);
+  }
   cb(null, { ...baseCors, origin: allowed });
 }
 
+// Apply CORS early; explicitly handle OPTIONS for all paths
 app.use(cors(corsDelegate));
 app.options('*', cors(corsDelegate));
 
-// ---- Parsers & logs ----
+// ---------- Parsers & logs ----------
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'tiny' : 'dev'));
 
-// ---- Mongo ----
+// ---------- Mongo ----------
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sms_merged';
-const DB_NAME = process.env.DB_NAME || 'sms_merged';
+const DB_NAME   = process.env.DB_NAME   || 'sms_merged';
 
-try { 
+try {
   await mongoose.connect(MONGO_URI, { dbName: DB_NAME, serverSelectionTimeoutMS: 10000 });
   console.log('Mongo connected:', mongoose.connection.name);
-} catch (err) { 
+} catch (err) {
   console.error('Mongo connection error:', err?.message || err);
 }
 
-// ---- Health ----
+// ---------- Health ----------
 app.get('/health', (_req, res) => {
-  const state = mongoose.connection.readyState;
+  const state = mongoose.connection.readyState; // 0..3
   res.json({ ok: true, db: state === 1 ? 'up' : 'down', state });
 });
 app.get('/api/health', (_req, res) => {
@@ -100,16 +109,19 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, db: state === 1 ? 'up' : 'down', state, env: process.env.NODE_ENV || 'development' });
 });
 
-// ---- Mounts ----
+// ---------- Mounts (yours) ----------
 app.use('/api/auth', authRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/search', searchRoutes);
+
 app.use('/api/classes', classesRoutes);
 app.use('/api/students', studentsRoutes);
 app.use('/api/teachers', teachersRoutes);
+
 app.use('/api/attendance', attendanceStudentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/timetable', timetableRoutes);
+
 app.use('/api/assignments', assignmentsRoutes);
 app.use('/api/announcements', announcementsRoutes);
 app.use('/api/newsletters', newslettersRoutes);
@@ -117,18 +129,19 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/meetings', meetingsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/translate', translateRoutes);
+
 app.use('/api/grades', gradesRoutes);
-app.use('/api', studentNoticesRoutes);
+app.use('/api', studentNoticesRoutes); // /student-notices
 app.use('/api/teacher-notices', teacherNoticesRoutes);
 app.use('/api/class-notices', classNoticesRoutes);
 app.use('/api/ai', aiRoutes);
 
-// ---- Error handler ----
+// ---------- Error handler ----------
 app.use((err, req, res, _next) => {
   console.error('API error:', err?.message || err);
-  const status = err.status || 500;
-  res.status(status).json({ error: err?.message || 'Internal error' });
+  res.status(err.status || 500).json({ error: err?.message || 'Internal error' });
 });
 
+// ---------- Start ----------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log('API ready on :' + PORT));
