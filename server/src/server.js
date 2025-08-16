@@ -1,11 +1,11 @@
-// PATCHED: server/server.js
+// server/server.js
 import 'dotenv/config.js';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
 
-// ---- Models (your originals) ----
+// ---- Models ----
 import './models/User.js';
 import './models/Class.js';
 import './models/Student.js';
@@ -22,7 +22,7 @@ import './models/Meeting.js';
 import './models/Conversation.js';
 import './models/Message.js';
 
-// ---- Routes (your originals) ----
+// ---- Routes ----
 import authRoutes from './routes/auth.routes.js';
 import statsRoutes from './routes/stats.routes.js';
 import searchRoutes from './routes/search.routes.js';
@@ -47,35 +47,38 @@ import aiRoutes from './routes/ai.routes.js';
 
 const app = express();
 
-// Render/Proxies set secure cookies correctly when trust proxy is on
+// Ensure secure cookies work behind proxies (Render)
 app.set('trust proxy', 1);
 
-// ---- CORS (fixed) ----
-// Prefer ALLOWED_ORIGINS (comma-separated) or fall back to CLIENT_ORIGIN to keep compatibility
-const allowedRaw =
-  process.env.ALLOWED_ORIGINS?.trim() ||
-  process.env.CLIENT_ORIGIN?.trim() ||
-  'http://localhost:5173';
-
-const ALLOWLIST = allowedRaw
+// ---- CORS (strong preflight handling) ----
+const allowedRaw = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_ORIGIN || 'http://localhost:5173')
   .split(',')
-  .map((s) => s.trim())
+  .map(s => s.trim())
   .filter(Boolean);
 
-// NOTE: your previous code always returned "true" even when rejecting, which broke CORS.
-// This version properly accepts/blocks and sets credentials when needed.
+// Log what we allow (helpful when debugging 502 preflights)
+console.log('CORS allowlist:', allowedRaw);
+
 const corsOptions = {
   origin(origin, cb) {
-    // Allow server-to-server calls (no Origin header)
-    if (!origin) return cb(null, true);
-    if (ALLOWLIST.includes(origin)) return cb(null, true);
-    return cb(new Error(`Not allowed by CORS: ${origin}`));
+    if (!origin) return cb(null, true); // server-to-server/tools/health
+    if (allowedRaw.includes(origin)) return cb(null, true);
+    return cb(new Error(`Not allowed by CORS: ${origin}`), false);
   },
-  credentials: true, // ok even if you use Bearer tokens only
+  credentials: true, // ok even with Bearer tokens
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  optionsSuccessStatus: 204,
+  maxAge: 86400, // cache preflight for 24h
 };
 
 app.use(cors(corsOptions));
+// IMPORTANT: let OPTIONS requests succeed for any path
+app.options('*', cors(corsOptions));
+
+// ---- Parsers & logs ----
 app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'tiny' : 'dev'));
 
 // ---- Mongo ----
@@ -90,20 +93,19 @@ try {
   console.log('Mongo connected:', mongoose.connection.name);
 } catch (err) {
   console.error('Mongo connection error:', err?.message || err);
-  // Do not exit; keep server alive so health shows useful info
 }
 
-// ---- Health (keep old /health, add /api/health for Render checks) ----
-app.get('/health', (_req, res) => res.json({ ok: true }));
-app.get('/api/health', (_req, res) =>
-  res.json({
-    ok: true,
-    db: mongoose.connection?.readyState === 1 ? 'up' : 'down',
-    env: process.env.NODE_ENV || 'development',
-  })
-);
+// ---- Health ----
+app.get('/health', async (_req, res) => {
+  const state = mongoose.connection.readyState; // 0..3
+  res.json({ ok: true, db: state === 1 ? 'up' : 'down', state });
+});
+app.get('/api/health', async (_req, res) => {
+  const state = mongoose.connection.readyState;
+  res.json({ ok: true, db: state === 1 ? 'up' : 'down', state, env: process.env.NODE_ENV || 'development' });
+});
 
-// ---- Mounts (unchanged paths) ----
+// ---- Mounts ----
 app.use('/api/auth', authRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/search', searchRoutes);
@@ -112,8 +114,8 @@ app.use('/api/classes', classesRoutes);
 app.use('/api/students', studentsRoutes);
 app.use('/api/teachers', teachersRoutes);
 
-app.use('/api/attendance', attendanceStudentRoutes); // /student/:studentId
-app.use('/api/attendance', attendanceRoutes);       // /:classId
+app.use('/api/attendance', attendanceStudentRoutes);
+app.use('/api/attendance', attendanceRoutes);
 app.use('/api/timetable', timetableRoutes);
 
 app.use('/api/assignments', assignmentsRoutes);
@@ -130,13 +132,11 @@ app.use('/api/teacher-notices', teacherNoticesRoutes);
 app.use('/api/class-notices', classNoticesRoutes);
 app.use('/api/ai', aiRoutes);
 
-// ---- Error handler ----
+// ---- Error handler (keep last) ----
 app.use((err, req, res, _next) => {
-  console.error('API error:', err);
+  console.error('API error:', err?.message || err);
   const status = err.status || 500;
-  res.status(status).json({
-    error: err?.message || 'Internal error',
-  });
+  res.status(status).json({ error: err?.message || 'Internal error' });
 });
 
 // ---- Start ----
