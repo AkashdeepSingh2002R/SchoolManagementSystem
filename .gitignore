@@ -1,0 +1,6 @@
+# Environment files (dotenv)
+.env
+.env.*
+# keep only examples/templates in Git
+!.env.example
+!.env.sample
