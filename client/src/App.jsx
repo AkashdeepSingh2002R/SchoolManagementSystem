@@ -1,54 +1,48 @@
-import NavBar from './components/NavBar';
-import Footer from './components/Footer';
-import './App.css'
-import Homepage from './components/Homepage';
-import { BrowserRouter, Routes,Route, Navigate } from 'react-router-dom';
-import About from './components/About';
-import ContactUs from './components/ContactUs';
-import Login from './components/Login';
-import StaffInfo from './components/StaffInfo';
-import AdminDashboard from './components/AdminDashboard';
-import { AdminTabProvider } from './components/AdminTabProvider';
-import StaffData from './components/StaffData';
-import ClassData from './components/classData';
-import Announcement from './components/announcement';
-import Students from "./components/Students"
-import StudentInfo from './components/StudentInfo';
-import ClassInfo from './components/ClassInfo';
-import AdminSearch from './components/AdminSearch';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/auth.jsx';
+import AppLayout from './pages/AppLayout.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import CalendarPage from './pages/Calendar.jsx';
+import Announcements from './pages/Announcements.jsx';
+import MeetingRoom from './pages/MeetingRoom.jsx';
+import Newsletter from './pages/Newsletter.jsx';
+import Messages from './pages/Messages.jsx';
+import Login from './pages/Login.jsx';
+import PublicHome from './pages/PublicHome.jsx';
+import About from './pages/About.jsx';
+import Contact from './pages/Contact.jsx';
+import Academics from './pages/Academics.jsx';
+import Admissions from './pages/Admissions.jsx';
+import News from './pages/News.jsx';
+import Events from './pages/Events.jsx';
 
-function App() {
-
-  return (
-    <div className='appContainer'>
-     
-     <BrowserRouter>
-     <NavBar/>
-     <Routes>
-      <Route path='/' element={<Homepage/>}></Route>
-    < Route path='/about' element={<About />}></Route>
-     < Route path='/contact' element={<ContactUs />}></Route>
-     < Route path='/login' element={<Login />}></Route>
-     <Route path="/staff/:id" element={<StaffInfo />} />
-     <Route path="/student/:id" element={<StudentInfo />} />
-     <Route path="/class/:id" element={<ClassInfo />} />
-
-     <Route path="/admin" element={<AdminTabProvider><AdminDashboard /></AdminTabProvider>} >
-                     <Route path='home' element={<AdminSearch/>} />
-     
-     <Route  path="students" element={<Students />} />
-  <Route path="staff" element={<StaffData />} />
-  <Route path="classes" element={<ClassData />} />
-  <Route path="announcement" element={<Announcement />} />
-  </Route>
-{/* <Route path="/teacher" element={<TeacherDashboard />} />
-<Route path="/student" element={<StudentDashboard />} /> */}
-
-     </Routes>
-     <Footer/>
-  </BrowserRouter>
-    </div>
-  )
+function PrivateRoute({ children }){
+  const { user } = useAuth();
+  if(!user) return <Navigate to="/login" replace />;
+  return children;
 }
 
-export default App
+export default function App(){
+  return (
+    <Routes>
+      <Route index element={<PublicHome/>} />
+      <Route path="/" element={<PublicHome/>} />
+      <Route path="/login" element={<Login/>} />
+      <Route path="/about" element={<About/>} />
+      <Route path="/contact" element={<Contact/>} />
+      <Route path="/academics" element={<Academics/>} />
+      <Route path="/admissions" element={<Admissions/>} />
+      <Route path="/news" element={<News/>} />
+      <Route path="/events" element={<Events/>} />
+      <Route path="/app" element={<PrivateRoute><AppLayout/></PrivateRoute>}>
+        <Route index element={<Dashboard/>} />
+        <Route path="calendar" element={<CalendarPage/>} />
+        <Route path="announcements" element={<Announcements/>} />
+        <Route path="meetings" element={<MeetingRoom/>} />
+        <Route path="newsletter" element={<Newsletter/>} />
+        <Route path="messages" element={<Messages/>} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
