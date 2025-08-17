@@ -1,3 +1,4 @@
+// server/src/server.js
 import 'dotenv/config.js'
 import express from 'express'
 import cors from 'cors'
@@ -41,23 +42,88 @@ import translateRoutes from './routes/translate.routes.js'
 import gradesRoutes from './routes/grades.routes.js'
 import studentNoticesRoutes from './routes/studentNotices.routes.js'
 import teacherNoticesRoutes from './routes/teacherNotices.routes.js'
-import classNoticesRoutes from './routes/classNotices.routes.js';
-import aiRoutes from './routes/ai.routes.js';
+import classNoticesRoutes from './routes/classNotices.routes.js'
+import aiRoutes from './routes/ai.routes.js'
 
+/* ------------------------- Hardened CORS helpers ------------------------- */
+function normalizeOrigin (o) {
+  if (!o) return ''
+  return o.replace(/\/+$/, '').toLowerCase()
+}
+function parseAllowlist (rawCsv) {
+  return (rawCsv || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(normalizeOrigin)
+}
+function isWildcardAllowed (origin, allowlist) {
+  // Simple wildcard support for *.netlify.app if you include "https://*.netlify.app" in CLIENT_ORIGIN
+  const o = normalizeOrigin(origin)
+  if (!o) return true
+  if (allowlist.includes('https://*.netlify.app') && o.endsWith('.netlify.app')) return true
+  return false
+}
+const allowlist = [
+  // sensible local defaults
+  'http://localhost:5173',
+  'http://localhost:3000',
+  // user/env-provided origins
+  ...parseAllowlist(process.env.CLIENT_ORIGIN)
+]
+function isAllowed (origin) {
+  if (!origin) return true // allow no-origin (Postman/server-to-server)
+  const o = normalizeOrigin(origin)
+  if (allowlist.includes(o)) return true
+  if (isWildcardAllowed(o, allowlist)) return true
+  return false
+}
 
+/* ------------------------------- App Init ------------------------------- */
 const app = express()
-const raw = (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',').map(s=>s.trim())
-app.use(cors({ origin(origin, cb){ if(!origin) return cb(null,true); cb(raw.includes(origin)?null:new Error('CORS'), true) } }))
-app.use(express.json({ limit:'1mb' }))
-app.use(morgan('dev'))
 
+// Log requests
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
+
+// JSON parsing
+app.use(express.json({ limit: '1mb' }))
+
+// Make caches respect per-origin
+app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); })
+
+// Robust CORS
+const corsOptions = {
+  origin (origin, cb) {
+    if (isAllowed(origin)) return cb(null, true)
+    cb(new Error('CORS'))
+  },
+  credentials: true,
+  methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  optionsSuccessStatus: 204
+}
+app.use((req, _res, next) => {
+  // Helpful CORS debug during development
+  if (process.env.NODE_ENV !== 'production') {
+    const o = req.headers.origin || ''
+    console.log('CORS check:', { origin: o, allowed: isAllowed(o), allowlist })
+  }
+  next()
+})
+app.use(cors(corsOptions))
+// Preflight for all routes
+app.options('*', cors(corsOptions))
+
+/* ------------------------------- Database ------------------------------ */
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/sms_merged'
 await mongoose.connect(MONGO_URI, { dbName: process.env.DB_NAME || 'sms_merged' })
 console.log('Mongo connected:', mongoose.connection.name)
 
-app.get('/health', (_req,res)=>res.json({ ok:true }))
+/* -------------------------------- Health -------------------------------- */
+app.get('/health', (_req, res) => res.json({ ok: true }))
 
-// mounts (specific first)
+/* --------------------------------- Mounts -------------------------------- */
+// specific first
 app.use('/api/auth', authRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/search', searchRoutes)
@@ -81,13 +147,24 @@ app.use('/api/translate', translateRoutes)
 app.use('/api/grades', gradesRoutes)
 app.use('/api', studentNoticesRoutes) // /student-notices
 app.use('/api/teacher-notices', teacherNoticesRoutes)
-app.use('/api/class-notices', classNoticesRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/class-notices', classNoticesRoutes)
+app.use('/api/ai', aiRoutes)
 
-app.use((err, req, res, next)=>{
+/* --------------------------------- Errors -------------------------------- */
+app.use((err, req, res, next) => {
+  if (err?.message === 'CORS') {
+    console.error('API error: Not allowed by CORS — origin:', req.headers.origin)
+    return res.status(403).json({ error: 'Not allowed by CORS' })
+  }
   console.error('API error:', err)
   res.status(500).json({ error: 'Internal error', detail: err.message })
 })
 
+/* --------------------------------- Start -------------------------------- */
 const PORT = process.env.PORT || 5000
-app.listen(PORT, ()=> console.log('API ready on :'+PORT))
+app.listen(PORT, () => {
+  console.log('API ready on :' + PORT)
+  console.log('CORS allowlist:', allowlist)
+})
+
+export default app
