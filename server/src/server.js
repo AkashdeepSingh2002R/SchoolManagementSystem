@@ -125,6 +125,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }))
 /* --------------------------------- Mounts -------------------------------- */
 // specific first
 app.use('/api/auth', authRoutes)
+app.use('/auth', authRoutes);
 app.use('/api/stats', statsRoutes)
 app.use('/api/search', searchRoutes)
 
