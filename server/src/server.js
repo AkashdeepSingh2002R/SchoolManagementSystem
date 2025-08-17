@@ -58,21 +58,18 @@ function parseAllowlist (rawCsv) {
     .map(normalizeOrigin)
 }
 function isWildcardAllowed (origin, allowlist) {
-  // Simple wildcard support for *.netlify.app if you include "https://*.netlify.app" in CLIENT_ORIGIN
   const o = normalizeOrigin(origin)
   if (!o) return true
   if (allowlist.includes('https://*.netlify.app') && o.endsWith('.netlify.app')) return true
   return false
 }
 const allowlist = [
-  // sensible local defaults
   'http://localhost:5173',
   'http://localhost:3000',
-  // user/env-provided origins
   ...parseAllowlist(process.env.CLIENT_ORIGIN)
 ]
 function isAllowed (origin) {
-  if (!origin) return true // allow no-origin (Postman/server-to-server)
+  if (!origin) return true // allow Postman/server-to-server
   const o = normalizeOrigin(origin)
   if (allowlist.includes(o)) return true
   if (isWildcardAllowed(o, allowlist)) return true
@@ -81,29 +78,18 @@ function isAllowed (origin) {
 
 /* ------------------------------- App Init ------------------------------- */
 const app = express()
-
-// Log requests
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
-
-// JSON parsing
 app.use(express.json({ limit: '1mb' }))
-
-// Make caches respect per-origin
 app.use((req, res, next) => { res.setHeader('Vary', 'Origin'); next(); })
 
-// Robust CORS
 const corsOptions = {
-  origin (origin, cb) {
-    if (isAllowed(origin)) return cb(null, true)
-    cb(new Error('CORS'))
-  },
+  origin (origin, cb) { if (isAllowed(origin)) return cb(null, true); cb(new Error('CORS')) },
   credentials: true,
   methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
   optionsSuccessStatus: 204
 }
 app.use((req, _res, next) => {
-  // Helpful CORS debug during development
   if (process.env.NODE_ENV !== 'production') {
     const o = req.headers.origin || ''
     console.log('CORS check:', { origin: o, allowed: isAllowed(o), allowlist })
@@ -111,7 +97,6 @@ app.use((req, _res, next) => {
   next()
 })
 app.use(cors(corsOptions))
-// Preflight for all routes
 app.options('*', cors(corsOptions))
 
 /* ------------------------------- Database ------------------------------ */
@@ -123,9 +108,8 @@ console.log('Mongo connected:', mongoose.connection.name)
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
 /* --------------------------------- Mounts -------------------------------- */
-// specific first
+// canonical (under /api)
 app.use('/api/auth', authRoutes)
-app.use('/auth', authRoutes);
 app.use('/api/stats', statsRoutes)
 app.use('/api/search', searchRoutes)
 
@@ -150,6 +134,33 @@ app.use('/api', studentNoticesRoutes) // /student-notices
 app.use('/api/teacher-notices', teacherNoticesRoutes)
 app.use('/api/class-notices', classNoticesRoutes)
 app.use('/api/ai', aiRoutes)
+
+/* ---------- Aliases for non-/api paths (so old client URLs keep working) ---------- */
+app.use('/auth', authRoutes)
+app.use('/stats', statsRoutes)
+app.use('/search', searchRoutes)
+
+app.use('/classes', classesRoutes)
+app.use('/students', studentsRoutes)
+app.use('/teachers', teachersRoutes)
+
+app.use('/attendance', attendanceStudentRoutes)
+app.use('/attendance', attendanceRoutes)
+app.use('/timetable', timetableRoutes)
+
+app.use('/assignments', assignmentsRoutes)
+app.use('/announcements', announcementsRoutes)
+app.use('/newsletters', newslettersRoutes)
+app.use('/events', eventsRoutes)
+app.use('/meetings', meetingsRoutes)
+app.use('/messages', messagesRoutes)
+app.use('/translate', translateRoutes)
+
+app.use('/grades', gradesRoutes)
+app.use('/', studentNoticesRoutes)            // provides /student-notices
+app.use('/teacher-notices', teacherNoticesRoutes)
+app.use('/class-notices', classNoticesRoutes)
+app.use('/ai', aiRoutes)
 
 /* --------------------------------- Errors -------------------------------- */
 app.use((err, req, res, next) => {
