@@ -1,200 +1,129 @@
-import { useState } from 'react';
-import PublicNavbar from '../components/PublicNavbar.jsx';
-import HomeLoginCard from '../components/HomeLoginCard.jsx';
+import { useState } from "react";
+import PublicNavbar from "../components/PublicNavbar.jsx";
+import HomeLoginCard from "../components/HomeLoginCard.jsx";
 
-function Stat({ label, value }){
+/* resilient image loader */
+function SafeImg({ stem, alt, className, ...rest }) {
+  const base = import.meta.env.BASE_URL || "/";
+  const candidates = ["webp","jpg","jpeg","png"].flatMap(ext => [
+    `${base}${stem}.${ext}`,
+    `${base}${stem.replace(/-/g,"_")}.${ext}`,
+    `${base}${stem.replace(/_/g,"-")}.${ext}`,
+  ]);
+  const [i,setI] = useState(0);
   return (
-    <div className="rounded-2xl border dark:border-gray-900 p-4 bg-white dark:bg-gray-950">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-2xl font-bold mt-1">{value}</div>
-    </div>
+    <img
+      src={candidates[i] || ""}
+      onError={() => setI(n => (n < candidates.length-1 ? n+1 : n))}
+      alt={alt}
+      className={className}
+      {...rest}
+    />
   );
 }
 
-/** Image that auto-tries hyphen/underscore + webp/jpg/jpeg/png */
-function SafeImg({ stem, alt, className, ...rest }) {
-  const base = import.meta.env.BASE_URL || '/';
-  const candidates = [
-    ...['webp','jpg','jpeg','png'].flatMap(ext => [
-      `${base}${stem}.${ext}`,
-      `${base}${stem.replace(/-/g,'_')}.${ext}`,
-      `${base}${stem.replace(/_/g,'-')}.${ext}`,
-    ]),
-  ];
-  const [idx, setIdx] = useState(0);
-  const src = candidates[idx] || '';
-
-  // Stop after trying all candidates (prevents infinite loop)
-  const handleError = () => {
-    setIdx(i => (i < candidates.length - 1 ? i + 1 : i));
-  };
-
-  return <img src={src} alt={alt} onError={handleError} className={className} {...rest} />;
-}
-
 export default function PublicHome(){
-  const base = import.meta.env.BASE_URL || '/';
-  // Just list the stems; SafeImg will try extensions & hyphen/underscore variants.
-  const galleryStems = [
-    'photo-gallery1',
-    'photo-gallery2',
-    'photo-gallery3',
-    'photo-gallery4',
-    'photo-gallery5',
-    'photo-gallery6',
-  ];
+  const gallery = ["photo-gallery1","photo-gallery2","photo-gallery3"];
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-      <PublicNavbar />
+    <div className="min-h-screen bg-stone-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+      <PublicNavbar/>
 
-      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-8">
-        {/* Hero & Right Column */}
-        <section className="grid lg:grid-cols-3 gap-6 items-start">
-          {/* Left 2/3 */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="rounded-3xl border dark:border-gray-900 p-6 bg-white dark:bg-gray-950">
-              <div className="grid md:grid-cols-2 gap-6 items-center">
-                <div>
-                  <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-                    Inspiring minds, <br /> building futures
-                  </h1>
-                  <p className="mt-2 text-gray-600 dark:text-gray-300">
-                    A K–12 community focused on curiosity, character, and excellence.
-                  </p>
-                  <div className="mt-4 flex gap-2">
-                    <a href="/about" className="px-4 py-2 rounded-xl bg-emerald-600 text-white">Learn More</a>
-                    <a href="/contact" className="px-4 py-2 rounded-xl border dark:border-gray-800">Contact Us</a>
-                  </div>
-                </div>
-
-                {/* Robust hero image (no collapse; works with any basePath) */}
-                <div
-                  className="relative rounded-2xl overflow-hidden border dark:border-gray-800"
-                  style={{ paddingTop: '56.25%' }}  // 16:9 height
+      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-10">
+        {/* HERO — consistent brand in light/dark */}
+        <section className="rounded-3xl overflow-hidden border border-stone-200 dark:border-slate-700 shadow-sm">
+          <div className="grid md:grid-cols-2">
+            {/* Left: copy + CTA */}
+            <div className="p-8 md:p-12 bg-stone-50 text-slate-900 dark:bg-slate-900 dark:text-white">
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+                Shaping tomorrow’s leaders
+              </h1>
+              <p className="mt-3 text-slate-700 dark:text-slate-300">
+                A vibrant K–12 school blending tradition, innovation, and community.
+              </p>
+              <div className="mt-6">
+                <a
+                  href="/admissions"
+                  className="px-5 py-2.5 rounded-xl bg-[#7a1f2a] hover:bg-[#691a24] text-white font-semibold shadow focus:outline-none focus:ring-2 focus:ring-amber-400"
                 >
-                  <img
-                    src={`${base}school-photo.png`}  // put file in /public/school-photo.png
-                    alt="School campus and students"
-                    className="absolute inset-0 h-full w-full object-cover"
-                    loading="eager"
-                    sizes="(min-width: 768px) 50vw, 100vw"
-                  />
+                  Apply Now
+                </a>
+              </div>
+
+              {/* Stats — amber chips invert properly in dark */}
+              <div className="mt-8 grid grid-cols-2 gap-3 max-w-sm">
+                <div className="rounded-xl px-4 py-3 bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-800 dark:text-amber-100 dark:border-amber-700">
+                  <div className="text-2xl font-extrabold">800+</div>
+                  <div className="text-sm">Students</div>
+                </div>
+                <div className="rounded-xl px-4 py-3 bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-800 dark:text-amber-100 dark:border-amber-700">
+                  <div className="text-2xl font-extrabold">50+</div>
+                  <div className="text-sm">Faculty</div>
                 </div>
               </div>
             </div>
 
-            {/* Quick stats */}
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Stat label="Students" value="800+" />
-              <Stat label="Teachers" value="50+" />
-            </div>
-
-            {/* Announcements strip */}
-            <div className="rounded-2xl border dark:border-gray-900 p-3 overflow-hidden bg-white dark:bg-gray-950">
-              <div className="text-xs tracking-wide uppercase text-gray-500 mb-2">Announcements</div>
-              <div className="text-sm flex flex-wrap gap-3">
-                <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">Admissions open for 2025</span>
-                <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">Science Fair · May 21</span>
-                <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800">Sports Day · June 3</span>
-                <a href="/news" className="ml-auto text-emerald-700 dark:text-emerald-400">All updates →</a>
-              </div>
-            </div>
-
-            {/* Upcoming & Programs */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="rounded-2xl border dark:border-gray-900 p-4 bg-white dark:bg-gray-950">
-                <div className="font-semibold">Upcoming Events</div>
-                <ul className="mt-2 text-sm space-y-2">
-                  <li className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800">Apr 15</span>
-                    <span>Art Exhibition</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800">May 21</span>
-                    <span>Science Fair</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800">Jun 03</span>
-                    <span>Sports Day</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="rounded-2xl border dark:border-gray-900 p-4 bg-white dark:bg-gray-950">
-                <div className="font-semibold">Academic Programs</div>
-                <ul className="mt-2 text-sm list-disc pl-5 space-y-1">
-                  <li>STEM Pathways (Robotics, Coding, Math Circles)</li>
-                  <li>Arts & Design (Studio, Music, Drama)</li>
-                  <li>Languages (English, Hindi, Punjabi, French)</li>
-                  <li>Athletics (Track, Football, Badminton)</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Testimonials + Gallery */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="rounded-2xl border dark:border-gray-900 p-4 bg-white dark:bg-gray-950">
-                <div className="font-semibold mb-2">Parent Testimonials</div>
-                <div className="grid grid-cols-2 gap-2">
-                  {Array.from({length:4}).map((_,i)=>(
-                    <div key={i} className="rounded-xl border dark:border-gray-900 p-3 text-sm">
-                      “Excellent teachers and a supportive environment.”
-                    </div>
-                  ))}
+            {/* Right: login + image on card background */}
+            <div className="p-6 md:p-8 bg-white dark:bg-slate-800 border-l border-stone-200 dark:border-slate-700">
+              <div id="login" className="max-w-md ml-auto">
+                <div className="rounded-2xl border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
+                  <HomeLoginCard/>
                 </div>
               </div>
-
-              <div className="rounded-2xl border dark:border-gray-900 p-4 bg-white dark:bg-gray-950">
-                <div className="font-semibold mb-2">Photo Gallery</div>
-                <div className="grid grid-cols-3 gap-2">
-                  {galleryStems.map((stem, i)=>(
-                    <div key={i} className="aspect-square rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800">
-                      <SafeImg
-                        stem={stem}                           // e.g., 'photo-gallery1'
-                        alt={`School photo ${i+1}`}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Newsletter */}
-            <div className="rounded-2xl border dark:border-gray-900 p-4 bg-white dark:bg-gray-950">
-              <div className="font-semibold">Email newsletter</div>
-              <div className="mt-2 flex gap-2">
-                <input
-                  placeholder="Enter your email"
-                  className="flex-1 border rounded px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-900 dark:border-gray-800"
-                />
-                <button className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-gray-900">
-                  Subscribe
-                </button>
+              <div className="mt-6 rounded-2xl overflow-hidden border border-stone-200 dark:border-slate-700">
+<SafeImg stem="school-photo" alt="Campus" className="w-full h-48 md:h-56 object-cover" loading="lazy" />
               </div>
             </div>
           </div>
+        </section>
 
-          {/* Right 1/3 */}
-          <div className="space-y-4">
-            <div className="rounded-2xl border dark:border-gray-900 p-4 bg-white dark:bg-gray-950">
-              <div className="font-semibold mb-2">Quick Links</div>
-              <ul className="text-sm space-y-1">
-                <li><a href="/academics" className="hover:underline">Curriculum & Streams</a></li>
-                <li><a href="/admissions" className="hover:underline">Admissions Process</a></li>
-                <li><a href="/events" className="hover:underline">School Calendar</a></li>
-                <li><a href="/news" className="hover:underline">Latest News</a></li>
-              </ul>
+        {/* Highlights */}
+        <section className="grid md:grid-cols-2 gap-6">
+          <div className="rounded-2xl border border-stone-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800 shadow-sm">
+            <div className="flex items-center">
+              <h2 className="font-semibold text-lg">Announcements</h2>
+              <a href="/news" className="ml-auto text-sm text-[#7a1f2a] hover:underline">View All →</a>
             </div>
+            <ul className="mt-3 space-y-2">
+              <li><a href="/news#admissions" className="block rounded-lg px-3 py-2 hover:bg-stone-50 dark:hover:bg-slate-700/70">Admissions open for 2025</a></li>
+              <li><a href="/news#science-fair" className="block rounded-lg px-3 py-2 hover:bg-stone-50 dark:hover:bg-slate-700/70">Science Fair — May 21</a></li>
+            </ul>
+          </div>
 
-            <HomeLoginCard />
+          <div className="rounded-2xl border border-stone-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800 shadow-sm">
+            <div className="flex items-center">
+              <h2 className="font-semibold text-lg">Programs</h2>
+              <a href="/programs" className="ml-auto text-sm text-[#7a1f2a] hover:underline">Learn more →</a>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {["STEM","Arts & Music","Languages","Athletics","Clubs"].map(t=>(
+                <a key={t} href={`/programs#${encodeURIComponent(t.toLowerCase())}`}
+                   className="px-3 py-1.5 rounded-full border border-stone-300 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-700/70 text-sm">
+                  {t}
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Gallery */}
+        <section className="rounded-2xl border border-stone-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-800 shadow-sm">
+          <div className="flex items-center">
+            <h2 className="font-semibold text-lg">Gallery</h2>
+            <a href="/gallery" className="ml-auto text-sm text-[#7a1f2a] hover:underline">View Gallery →</a>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            {gallery.map((stem, i) => (
+              <div key={i} className="aspect-[4/3] overflow-hidden rounded-xl bg-stone-200 dark:bg-slate-700">
+                <SafeImg stem={stem} alt={`Gallery ${i+1}`} className="h-full w-full object-cover hover:scale-[1.02] transition-transform" loading="lazy"/>
+              </div>
+            ))}
           </div>
         </section>
       </main>
 
-      <footer className="border-t dark:border-gray-900 mt-12">
-        <div className="max-w-7xl mx-auto p-4 text-sm text-gray-500">
+      <footer className="mt-12 border-t border-stone-200 dark:border-slate-700">
+        <div className="max-w-7xl mx-auto p-4 text-sm text-slate-600 dark:text-slate-400">
           © {new Date().getFullYear()} Bluebell Public School. All rights reserved.
         </div>
       </footer>
